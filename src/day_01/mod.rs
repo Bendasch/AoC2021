@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::prelude::*;
+use crate::get_contents;
 
 pub fn main() {
     println!("Day-01 part 1: {}", part_one());
@@ -48,11 +47,4 @@ fn part_two() -> u32 {
         }
     }
     counter
-}
-
-fn get_contents(filename: &str) -> String {
-    let mut file = File::open(filename).unwrap();
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-    contents
 }
