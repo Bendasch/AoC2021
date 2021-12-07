@@ -8,43 +8,35 @@ pub fn main() {
 fn part_one() -> u32 {
     let contents = get_contents("src/day_01/input_1.txt");
     let mut counter: u32 = 0;
-    let mut line_iter = contents.lines().into_iter();
+    let mut line_iter = contents.lines();
     let mut prev_value: i32 = line_iter.next().unwrap().parse::<i32>().unwrap();
-    loop {
-        match line_iter.next() {
-            Some(value) => {
-                let value = value.parse::<i32>().unwrap();
-                if value > prev_value {
-                    counter += 1;
-                }
-                prev_value = value;
-            }
-            None => break,
+
+    while let Some(value) = line_iter.next() {
+        let value = value.parse::<i32>().unwrap();
+        if value > prev_value {
+            counter += 1;
         }
+        prev_value = value;
     }
     counter
 }
 
 fn part_two() -> u32 {
     let contents = get_contents("src/day_01/input_2.txt");
-    let mut line_iter = contents.lines().into_iter();
+    let mut line_iter = contents.lines();
     let mut value_one = line_iter.next().unwrap().parse::<i32>().unwrap();
     let mut value_two = line_iter.next().unwrap().parse::<i32>().unwrap();
     let mut value_three = line_iter.next().unwrap().parse::<i32>().unwrap();
     let mut counter: u32 = 0;
-    loop {
-        match line_iter.next() {
-            Some(line) => {
-                let value_four = line.parse::<i32>().unwrap();
-                if value_four > value_one {
-                    counter += 1;
-                }
-                value_one = value_two;
-                value_two = value_three;
-                value_three = value_four;
-            }
-            None => break,
+
+    while let Some(line) = line_iter.next() {
+        let value_four = line.parse::<i32>().unwrap();
+        if value_four > value_one {
+            counter += 1;
         }
+        value_one = value_two;
+        value_two = value_three;
+        value_three = value_four;
     }
     counter
 }

@@ -12,16 +12,16 @@ fn part_one() -> u32 {
     let mut counter: [u32; WIDTH] = [0; WIDTH];
     let mut line_count = 0;
     for line in contents.lines() {
-        for i in 0..WIDTH {
-            counter[i] += line.chars().collect::<Vec<char>>()[i].to_digit(2).unwrap();
+        for (i, count) in counter.iter_mut().enumerate().take(WIDTH) {
+            *count += line.chars().collect::<Vec<char>>()[i].to_digit(2).unwrap();
         }
         line_count += 1;
     }
 
     let mut gamma: u32 = 0;
     let mut epsilon: u32 = 0;
-    for i in 0..WIDTH {
-        if counter[i] > (line_count / 2) as u32 {
+    for (i, count) in counter.iter_mut().enumerate().take(WIDTH) {
+        if *count > (line_count / 2) as u32 {
             gamma += u32::pow(2, (WIDTH - (i + 1)) as u32);
         } else {
             epsilon += u32::pow(2, (WIDTH - (i + 1)) as u32);
