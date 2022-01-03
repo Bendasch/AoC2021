@@ -1,118 +1,128 @@
 use crate::get_contents;
 
+use std::collections::HashMap;
+
 pub fn main() {
     println!("Day-14 part 1: {}", part_one());
     println!("Day-14 part 2: {}", part_two());
 }
 
-fn part_one() -> usize {
+fn part_one() -> u64 {
     let contents = get_contents("src/day_14/input.txt");
-    let (mut polymer, rules) = parse_contents(contents);
-    for _ in 0..10 {
-        polymer.perform_insertions(&rules);
-    }
-    polymer.get_highest_count() - polymer.get_lowest_count()
+    let mut polymer = Polymer::new(contents);
+    polymer.iterate(10);
+    let max_count = polymer.counts.iter().max().unwrap();
+    let min_count = polymer.counts.iter().filter(|&v| *v > 0).min().unwrap();
+    max_count - min_count
 }
 
-fn part_two() -> usize {
-    let contents = get_contents("src/day_14/example.txt");
-    let (mut polymer, rules) = parse_contents(contents);
-    for k in 0..40 {
-        println!("Performing insertion: {}", k + 1);
-        polymer.perform_insertions(&rules);
-    }
-    polymer.get_highest_count() - polymer.get_lowest_count()
+fn part_two() -> u64 {
+    let contents = get_contents("src/day_14/input.txt");
+    let mut polymer = Polymer::new(contents);
+    polymer.iterate(40);
+    let max_count = polymer.counts.iter().max().unwrap();
+    let min_count = polymer.counts.iter().min().unwrap();
+    max_count - min_count
 }
 
-fn parse_contents(contents: String) -> (Polymer, Vec<InsertionRule>) {
-    let mut lines = contents.lines();
-    let template = Polymer(lines.next().unwrap().to_string());
-    lines.next(); // skip empty line separting template and rules
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+struct Key(char, char);
 
-    let mut rules: Vec<InsertionRule> = Vec::new();
-    for line in lines {
-        let mut rule_parts = line.split("->");
-        let mut location = rule_parts.next().unwrap().trim().chars();
-        let mut insertion = rule_parts.next().unwrap().trim().chars();
-        rules.push(InsertionRule(
-            location.next().unwrap(),
-            location.next().unwrap(),
-            insertion.next().unwrap(),
-        ));
-    }
-    rules.sort();
-    (template, rules)
-}
-
-#[derive(Debug, PartialEq, Eq, Ord)]
-struct InsertionRule(char, char, char);
-
-impl PartialOrd for InsertionRule {
-
-}
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Rules(HashMap<Key, char>);
 
 #[derive(Debug)]
-struct Polymer(String);
+struct Polymer {
+    template: Vec<char>,
+    rules: Rules,
+    counts: Vec<u64>,
+}
 
 impl Polymer {
-    fn perform_insertions(&mut self, rules: &[InsertionRule]) {
-        let old_polymer = self.0.clone().chars().collect::<Vec<char>>();
-        let mut new_polymer: Vec<char> = Vec::new();
-        new_polymer.push(old_polymer[0]);
-        for (k, &char) in old_polymer.iter().enumerate() {
-            if k == 0 {
-                continue;
-            }
-            let matching_rule = rules.iter().find(|rule| {
-                rule.0 == old_polymer[k-1] && rule.1 == old_polymer[k]
-            });
-            if matching_rule.is_none() {
-                continue;
-            }
-            let matching_rule = matching_rule.unwrap();
-            new_polymer.push(matching_rule.2);
-            new_polymer.push(char);
+    fn new(contents: String) -> Polymer {
+        let mut lines = contents.lines();
+        let template = lines.next().unwrap().chars().collect::<Vec<char>>();
+        lines.next(); // skip empty line separting template and rules
+
+        let mut rules: Rules = Rules(HashMap::new());
+        for line in lines {
+            let mut rule_parts = line.split("->");
+            let mut location = rule_parts.next().unwrap().trim().chars();
+            let key = Key(location.next().unwrap(), location.next().unwrap());
+            let value = rule_parts.next().unwrap().trim().chars().next().unwrap();
+            rules.0.insert(key, value);
         }
-        self.0 = new_polymer.iter().collect::<String>();
+
+        let mut counts = vec![0; 10];
+        for ch in template.iter() {
+            add_count(&mut counts, *ch);
+        }
+
+        Polymer {
+            template,
+            rules,
+            counts,
+        }
     }
 
-    fn get_highest_count(&self) -> usize {
-        let mut chars = self.0.chars().collect::<Vec<char>>();
-        chars.sort();
-        let mut previous_char = ' ';
-        let mut max_count = 0;
-        let mut current_count = 0;
-        for char in chars.into_iter() {
-            if char == previous_char {
-                current_count += 1;
-                continue;
-            }
-            max_count = max_count.max(current_count);
-            current_count = 1;
-            previous_char = char;
+    fn iterate(&mut self, iter: usize) {
+        let mut parents = Key(' ', ' ');
+        for k in 1..self.template.len() {
+            parents.0 = self.template[k - 1];
+            parents.1 = self.template[k];
+            println!("Calculating {}{}...", parents.0, parents.1);
+            self.calc_offspring(&parents, &iter);
         }
-        max_count
     }
 
-    fn get_lowest_count(&self) -> usize {
-        let mut chars = self.0.chars().collect::<Vec<char>>();
-        chars.sort();
-        let mut previous_char = ' ';
-        let mut min_count = 0;
-        let mut current_count = 0;
-        for char in chars.into_iter() {
-            if char == previous_char {
-                current_count += 1;
-                continue;
-            }
-            if min_count == 0 {
-                min_count = current_count;
-            } else {
-                min_count = min_count.min(current_count);
-            }
-            current_count = 1;
-            previous_char = char;
+    fn calc_offspring(&mut self, parents: &Key, iter: &usize) {
+        match self.add_child(parents) {
+            Some(child) if *iter > 1 => self.calc_offspring_recursive(&child, parents, &(iter - 1)),
+            _ => {}
         }
-        min_count
+    }
+
+    fn calc_offspring_recursive(&mut self, child: &char, parents: &Key, iter: &usize) {
+        let left_parents = Key(parents.0, *child);
+        match self.add_child(&left_parents) {
+            Some(left_child) if *iter > 1 => {
+                self.calc_offspring_recursive(&left_child, &left_parents, &(iter - 1))
+            }
+            _ => {}
+        }
+
+        let right_parents = Key(*child, parents.1);
+        match self.add_child(&right_parents) {
+            Some(right_child) if *iter > 1 => {
+                self.calc_offspring_recursive(&right_child, &right_parents, &(iter - 1))
+            }
+            _ => {}
+        }
+    }
+
+    fn add_child(&mut self, parents: &Key) -> Option<char> {
+        let rule = self.rules.0.get(parents);
+        if rule.is_none() {
+            return None;
+        }
+        let child = rule.unwrap();
+        add_count(&mut self.counts, *child);
+        return Some(*child);
+    }
+}
+
+fn add_count(counts: &mut Vec<u64>, ch: char) {
+    match ch {
+        'B' => counts[0] += 1,
+        'C' => counts[1] += 1,
+        'F' => counts[2] += 1,
+        'H' => counts[3] += 1,
+        'K' => counts[4] += 1,
+        'N' => counts[5] += 1,
+        'O' => counts[6] += 1,
+        'P' => counts[7] += 1,
+        'S' => counts[8] += 1,
+        'V' => counts[9] += 1,
+        _ => panic!("Unknown char {}", ch),
     }
 }
