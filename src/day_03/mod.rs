@@ -66,6 +66,7 @@ enum Frequency {
     Least,
 }
 
+#[allow(clippy::all)]
 fn get_subset(lines: Vec<&str>, index: usize, freq: Frequency) -> Vec<&str> {
     let mut line_count = 0.;
     let mut zeros = Vec::new();

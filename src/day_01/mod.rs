@@ -5,6 +5,7 @@ pub fn main() {
     println!("Day-01 part 2: {}", part_two());
 }
 
+#[allow(clippy::all)]
 fn part_one() -> u32 {
     let contents = get_contents("src/day_01/input_1.txt");
     let mut counter: u32 = 0;
@@ -21,6 +22,7 @@ fn part_one() -> u32 {
     counter
 }
 
+#[allow(clippy::all)]
 fn part_two() -> u32 {
     let contents = get_contents("src/day_01/input_2.txt");
     let mut line_iter = contents.lines();

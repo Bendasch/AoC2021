@@ -59,6 +59,7 @@ fn get_key_from_pattern(pattern: &str) -> String {
     key_vec.iter().collect::<String>()
 }
 
+#[allow(clippy::all)]
 fn get_translation_map(patterns: &[&str]) -> HashMap<char, char> {
     let mut translation_map: HashMap<char, char> = HashMap::new();
     let one = get_unique_pattern(1, patterns);
