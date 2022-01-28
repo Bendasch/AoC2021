@@ -1,4 +1,6 @@
-use aoc2021::*;
+mod days;
+
+use days::*;
 use std::env;
 
 fn main() {
