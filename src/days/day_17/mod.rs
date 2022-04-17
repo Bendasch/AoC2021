@@ -8,44 +8,66 @@ pub fn main() {
 fn part_one() -> i32 {
     let contents = get_contents("src/days/day_17/input.txt");
     let target = get_target_from_input(contents);
-    let max_v = find_max_possible_velocity(target);
+    let max_v = get_max_y_v(target);
     calc_height_from_sv(max_v)
 }
 
-fn part_two() -> i32 {
-    let contents = get_contents("src/days/day_17/example.txt");
-    println!("{:?}", get_target_from_input(contents));
+fn part_two() -> usize {
+    let contents = get_contents("src/days/day_17/input.txt");
+    let target = get_target_from_input(contents);
+    let vs = get_all_vs(&target);
+    vs.iter().count()
+}
+
+fn calc_height_from_sv(yv: i32) -> i32 {
+    if yv > 0 {
+        return (yv.pow(2) + yv) / 2;
+    }
     0
 }
 
-fn calc_height_from_sv(sv: i32) -> i32 {
-    return (sv.pow(2) + sv) / 2;
+fn get_max_y_v(target: Target) -> i32 {
+    let y_vs = get_all_vs(&target);
+    return y_vs.into_iter().map(|(_, yv)| yv).max().unwrap();
 }
 
-fn find_max_possible_velocity(target: Target) -> i32 {
-    let min_x_v: i32 = get_min_x_v(&target);
-    let max_y_v: i32 = get_max_y_v(&target, min_x_v);
-    for sv in (1..max_y_v).rev() {
-        let mut position: i32 = 0;
-        let mut velocity: i32 = -sv;
-        while position > target.y1 {
-            if target.y0 >= position && target.y1 <= position {
-                return sv;
+fn get_all_vs(target: &Target) -> Vec<(i32, i32)> {
+    let mut vs: Vec<(i32, i32)> = Vec::new();
+    get_all_x_vs(&target).into_iter().for_each(|xv| {
+        let yv_bounds: (i32, i32) = get_yv_bounds(&target, xv);
+        for yv in yv_bounds.0..=yv_bounds.1 {
+            let mut y_pos: i32 = 0;
+            let mut x_pos: i32 = 0;
+            let mut x_v_cur: i32 = xv;
+            let mut y_v_cur: i32 = yv;
+            while x_pos <= target.x1 && y_pos >= target.y1 {
+                if is_pos_on_target(target, (x_pos, y_pos)) {
+                    vs.push((xv, yv));
+                    break;
+                }
+                x_pos += x_v_cur;
+                y_pos += y_v_cur;
+                x_v_cur = i32::max(0, x_v_cur - 1);
+                y_v_cur -= 1;
             }
-            position += velocity;
-            velocity -= 1;
         }
-    }
-    return 0;
+    });
+    return vs;
 }
 
-fn get_min_x_v(target: &Target) -> i32 {
-    for sv in 1..target.x1 {
+fn is_pos_on_target(target: &Target, pos: (i32, i32)) -> bool {
+    pos.0 >= target.x0 && pos.0 <= target.x1 && pos.1 <= target.y0 && pos.1 >= target.y1
+}
+
+fn get_all_x_vs(target: &Target) -> Vec<i32> {
+    let mut vs: Vec<i32> = Vec::new();
+    for sv in 1..=target.x1 {
         let mut position: i32 = 0;
         let mut velocity = sv;
-        while position < target.x1 {
+        while position <= target.x1 {
             if target.x0 <= position && target.x1 >= position {
-                return sv;
+                vs.push(sv);
+                break;
             }
             if velocity == 0 {
                 break;
@@ -54,13 +76,40 @@ fn get_min_x_v(target: &Target) -> i32 {
             velocity = i32::max(0, velocity - 1);
         }
     }
-    return 0;
+    return vs;
 }
 
-fn get_max_num_steps(target: &Target, min_x_v: i32) -> i32 {
+fn get_yv_bounds(target: &Target, xv: i32) -> (i32, i32) {
+    (target.y1, get_upper_yv_bound(target, xv))
+}
+
+fn get_upper_yv_bound(target: &Target, xv: i32) -> i32 {
+    let max_steps = get_max_num_steps(target, xv);
+    let bound = if max_steps == i32::MAX {
+        i32::abs(target.y1)
+    } else {
+        (max_steps - 1) / 2
+    };
+    for yv in (0..bound).rev() {
+        let mut steps = 0;
+        let mut y_pos: i32 = 0;
+        let mut y_v_cur: i32 = yv;
+        while steps <= max_steps && y_pos >= target.y1 {
+            if y_pos <= target.y0 {
+                return yv;
+            };
+            y_pos += y_v_cur;
+            y_v_cur -= 1;
+            steps += 1;
+        }
+    }
+    0
+}
+
+fn get_max_num_steps(target: &Target, xv: i32) -> i32 {
     let mut steps = 0;
     let mut position: i32 = 0;
-    let mut velocity: i32 = min_x_v;
+    let mut velocity: i32 = xv;
     while position <= target.x1 {
         if velocity == 0 {
             return i32::MAX;
@@ -70,10 +119,6 @@ fn get_max_num_steps(target: &Target, min_x_v: i32) -> i32 {
         velocity = i32::max(0, velocity - 1);
     }
     steps
-}
-
-fn get_max_y_v(target: &Target, min_x_v: i32) -> i32 {
-    i32::min(i32::abs(target.y1), get_max_num_steps(target, min_x_v))
 }
 
 #[derive(Debug)]
