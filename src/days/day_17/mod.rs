@@ -16,7 +16,7 @@ fn part_two() -> usize {
     let contents = get_contents("src/days/day_17/input.txt");
     let target = get_target_from_input(contents);
     let vs = get_all_vs(&target);
-    vs.iter().count()
+    vs.len()
 }
 
 fn calc_height_from_sv(yv: i32) -> i32 {
@@ -28,13 +28,13 @@ fn calc_height_from_sv(yv: i32) -> i32 {
 
 fn get_max_y_v(target: Target) -> i32 {
     let y_vs = get_all_vs(&target);
-    return y_vs.into_iter().map(|(_, yv)| yv).max().unwrap();
+    y_vs.into_iter().map(|(_, yv)| yv).max().unwrap()
 }
 
 fn get_all_vs(target: &Target) -> Vec<(i32, i32)> {
     let mut vs: Vec<(i32, i32)> = Vec::new();
-    get_all_x_vs(&target).into_iter().for_each(|xv| {
-        let yv_bounds: (i32, i32) = get_yv_bounds(&target, xv);
+    get_all_x_vs(target).into_iter().for_each(|xv| {
+        let yv_bounds: (i32, i32) = get_yv_bounds(target, xv);
         for yv in yv_bounds.0..=yv_bounds.1 {
             let mut y_pos: i32 = 0;
             let mut x_pos: i32 = 0;
@@ -52,7 +52,7 @@ fn get_all_vs(target: &Target) -> Vec<(i32, i32)> {
             }
         }
     });
-    return vs;
+    vs
 }
 
 fn is_pos_on_target(target: &Target, pos: (i32, i32)) -> bool {
@@ -76,7 +76,7 @@ fn get_all_x_vs(target: &Target) -> Vec<i32> {
             velocity = i32::max(0, velocity - 1);
         }
     }
-    return vs;
+    vs
 }
 
 fn get_yv_bounds(target: &Target, xv: i32) -> (i32, i32) {
@@ -146,23 +146,19 @@ fn get_i32_from_input(dim: char, input: &str) -> (i32, i32) {
         'y' => input.find("y=").unwrap(),
         _ => panic!("Invalid dimension!"),
     };
-    let start = i32::from_str_radix(
-        &input
-            .chars()
-            .skip(idx + 2)
-            .take_while(|&x| x == '-' || x.is_digit(10))
-            .collect::<String>(),
-        10,
-    )
-    .unwrap();
-    let end = i32::from_str_radix(
-        &input
-            .chars()
-            .skip(idx + 2 + start.to_string().len() + 2)
-            .take_while(|&x| x == '-' || x.is_digit(10))
-            .collect::<String>(),
-        10,
-    )
-    .unwrap();
-    (start, end)
+    let start = &input
+        .chars()
+        .skip(idx + 2)
+        .take_while(|&x| x == '-' || x.is_digit(10))
+        .collect::<String>()
+        .parse::<i32>()
+        .unwrap();
+    let end = &input
+        .chars()
+        .skip(idx + 2 + start.to_string().len() + 2)
+        .take_while(|&x| x == '-' || x.is_digit(10))
+        .collect::<String>()
+        .parse::<i32>()
+        .unwrap();
+    (start.to_owned(), end.to_owned())
 }

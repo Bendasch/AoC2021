@@ -205,13 +205,10 @@ fn parse_packets(contents: String) -> HashMap<u64, Packet> {
                 Subpackets(c, t) if c == t => {
                     let popped_parent = stack.pop().unwrap();
                     packets.insert(popped_parent.id, popped_parent.clone());
-                    if stack.len() > 0 {
+                    if !stack.is_empty() {
                         let mut prev_parent = stack.pop().unwrap();
-                        match prev_parent.length_type {
-                            Subpackets(c2, t2) => { 
-                                prev_parent.length_type = Subpackets(c2 + 1, t2);
-                            }
-                            _ => {},
+                        if let Subpackets(c2, t2) = prev_parent.length_type {
+                             prev_parent.length_type = Subpackets(c2 + 1, t2);
                         }
                         prev_parent.subpackets.push(popped_parent);
                         stack.push(prev_parent);
