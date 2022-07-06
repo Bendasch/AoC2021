@@ -24,6 +24,7 @@ fn main() {
         Some(day) if day == "15" => day_15::main(),
         Some(day) if day == "16" => day_16::main(),
         Some(day) if day == "17" => day_17::main(),
+        Some(day) if day == "18" => day_18::main(),
         Some(_) => println!("Not implemented."),
         None => println!("Please specify a day"),
     }
