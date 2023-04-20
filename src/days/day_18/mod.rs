@@ -29,9 +29,10 @@ trait SnailFishNumber {
     fn is_reduced(&self) -> bool;
     fn reduce(&mut self);
     fn needs_explode(&self) -> bool;
-    fn explode(&mut self);
+    fn explode_one(&mut self, idx: Option<usize>) -> Option<usize>;
     fn needs_split(&self) -> bool;
-    fn split(&mut self);
+    fn split_one(&mut self, idx: Option<usize>) -> Option<usize>;
+    fn get_left_right(&self, idx: usize) -> (u8, u8);
 }
 
 impl SnailFishNumber for String {
@@ -68,9 +69,10 @@ impl SnailFishNumber for String {
     }
 
     fn reduce(&mut self) {
+        let mut changed_idx: Option<usize> = None;
         while !self.is_reduced() {
-            self.explode();
-            self.split();
+            changed_idx = self.explode_one(changed_idx);
+            changed_idx = self.split_one(changed_idx);
         }
     }
 
@@ -98,7 +100,71 @@ impl SnailFishNumber for String {
         false
     }
 
-    fn explode(&mut self) {}
+    /*
+        To explode a pair, the pair's left value is added to the first regular
+        number to the left of the exploding pair (if any), and the pair's right
+        value is added to the first regular number to the right of the exploding
+        pair (if any). Exploding pairs will always consist of two regular numbers.
+        Then, the entire exploding pair is replaced with the regular number 0.
+    */
+    fn explode_one(&mut self, idx: Option<usize>) -> Option<usize> {
+        if let Some(idx) = idx {
+            let mut depth = 0;
+            for c in self.chars().take(idx) {
+                match c {
+                    '[' => depth += 1,
+                    ']' => depth -= 1,
+                    _ => continue,
+                }
+            }
+            if depth > 4 {
+                let mut buffer = Vec::<char>::new();
+                let (left, right) = self.get_left_right(idx);
+                for c in self.chars().take(idx).collect::<Vec<char>>().iter().rev() {
+                    match c {
+                        ']' => continue,
+                        _ if c.is_digit(10) => buffer.push(*c),
+                        ',' if buffer.len() == 0 => continue,
+                        ',' if buffer.len() > 0 => break,
+                        '[' => break,
+                        _ => panic!("Invalid character: {}.", c),
+                    }
+                    let left_regular_number = buffer
+                        .iter()
+                        .rev()
+                        .collect::<String>()
+                        .as_str()
+                        .parse::<u8>()
+                        .unwrap();
+                }
+            }
+        }
+        None
+    }
+
+    fn get_left_right(&self, idx: usize) -> (u8, u8) {
+        let left_chars = self
+            .chars()
+            .skip(idx)
+            .take_while(|c| c.is_digit(10))
+            .collect::<Vec<char>>();
+        let offset = left_chars.len() + 1; // with comma
+        (
+            left_chars
+                .iter()
+                .collect::<String>()
+                .as_str()
+                .parse::<u8>()
+                .unwrap(),
+            self.chars()
+                .skip(idx + offset)
+                .take_while(|c| c.is_digit(10))
+                .collect::<String>()
+                .as_str()
+                .parse::<u8>()
+                .unwrap(),
+        )
+    }
 
     // If any regular number is 10 or greater, the leftmost such regular number splits.
     fn needs_split(&self) -> bool {
@@ -132,7 +198,13 @@ impl SnailFishNumber for String {
         false
     }
 
-    fn split(&mut self) {}
+    fn split_one(&mut self, idx: Option<usize>) -> Option<usize> {
+        match idx {
+            Some(idx) => {}
+            None => {}
+        }
+        None
+    }
 }
 
 #[cfg(test)]
